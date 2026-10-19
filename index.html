@@ -52,13 +52,39 @@
             background-color: white;
             z-index: 100;
             overflow-y: auto;
-            padding: 2rem 1rem;
+            padding: 1rem;
+        }
+        @media (min-width: 768px) {
+            .quiz-container {
+                padding: 2rem;
+                background-color: rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .quiz-container.active {
+                display: flex;
+            }
+            .quiz-card {
+                background: white;
+                padding: 2.5rem;
+                border-radius: 1.5rem;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+                width: 100%;
+                max-width: 550px;
+                position: relative;
+            }
         }
         .quiz-container.active {
             display: block;
         }
+        @media (min-width: 768px) {
+            .quiz-container.active {
+                display: flex;
+            }
+        }
         .quiz-card {
-            max-width: 600px;
+            max-width: 100%;
             margin: 0 auto;
         }
         .quiz-step {
@@ -66,96 +92,126 @@
         }
         .quiz-step.active {
             display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .quiz-option {
             width: 100%;
             text-align: left;
-            padding: 1rem;
+            padding: 1.25rem;
             border: 2px solid #e5e7eb;
             border-radius: 0.75rem;
             margin-bottom: 0.75rem;
             transition: all 0.2s;
+            cursor: pointer;
+            background: white;
         }
-        .quiz-option:hover {
+        .quiz-option:hover, .quiz-option:focus {
             border-color: #0b57d0;
             background-color: #f0f7ff;
+            outline: none;
         }
         .quiz-option.selected {
             border-color: #0b57d0;
             background-color: #f0f7ff;
             box-shadow: 0 0 0 1px #0b57d0;
         }
+        .progress-bar {
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 2px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #0b57d0;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900 font-sans">
-    <div id="quiz-overlay" class="quiz-container">
+    <div id="quiz-overlay" class="quiz-container" role="dialog" aria-modal="true" aria-labelledby="quiz-title">
         <div class="quiz-card">
-            <div class="flex justify-between items-center mb-8">
-                <div class="text-xl font-bold finder-text-blue">finder</div>
-                <button id="close-quiz" class="text-gray-400 hover:text-gray-600">
+            <div class="flex justify-between items-center mb-6">
+                <div class="text-xl font-bold finder-text-blue" id="quiz-title">Audit Your Earnings</div>
+                <button id="close-quiz" class="text-gray-400 hover:text-gray-600 p-2" aria-label="Close quiz">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
+            </div>
+
+            <div class="progress-bar">
+                <div id="quiz-progress" class="progress-fill"></div>
             </div>
 
             <div id="quiz-step-1" class="quiz-step active">
                 <h2 class="text-2xl font-bold mb-2">Step 1: Your Suburb</h2>
                 <p class="text-gray-600 mb-6">Let's check the local grid volatility in your area.</p>
                 <div class="mb-8">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Postcode</label>
-                    <input type="text" id="quiz-postcode" class="w-full p-4 border rounded-xl text-lg" placeholder="e.g. 2000">
+                    <label for="quiz-postcode" class="block text-sm font-medium text-gray-700 mb-2">Postcode</label>
+                    <input type="text" id="quiz-postcode" pattern="[0-9]*" inputmode="numeric" class="w-full p-4 border-2 border-gray-200 rounded-xl text-lg focus:border-blue-500 focus:outline-none transition-colors" placeholder="e.g. 2000">
+                    <p id="postcode-error" class="text-red-500 text-sm mt-2 hidden">Please enter a valid 4-digit postcode.</p>
                 </div>
-                <button class="next-step finder-blue text-white w-full py-4 rounded-xl font-bold text-lg">Continue</button>
+                <button id="postcode-next" class="finder-blue text-white w-full py-4 rounded-xl font-bold text-lg hover:bg-blue-700 transition-colors shadow-lg">Continue</button>
             </div>
 
             <div id="quiz-step-2" class="quiz-step">
                 <h2 class="text-2xl font-bold mb-2">Step 2: Solar & Battery</h2>
                 <p class="text-gray-600 mb-6">Do you currently have solar or a battery installed?</p>
-                <button class="quiz-option" data-value="solar-battery">
-                    <div class="font-bold">I have Solar + Battery</div>
-                    <div class="text-sm text-gray-500">Highest earning potential (VPP eligible)</div>
-                </button>
-                <button class="quiz-option" data-value="solar">
-                    <div class="font-bold">Solar only</div>
-                    <div class="text-sm text-gray-500">Good for summer feed-in premium</div>
-                </button>
-                <button class="quiz-option" data-value="none">
-                    <div class="font-bold">Neither</div>
-                    <div class="text-sm text-gray-500">Focus on smart appliance usage</div>
-                </button>
+                <div class="space-y-3">
+                    <button class="quiz-option" data-value="solar-battery">
+                        <div class="font-bold">I have Solar + Battery</div>
+                        <div class="text-sm text-gray-500">Highest earning potential (VPP eligible)</div>
+                    </button>
+                    <button class="quiz-option" data-value="solar">
+                        <div class="font-bold">Solar only</div>
+                        <div class="text-sm text-gray-500">Good for summer feed-in premium</div>
+                    </button>
+                    <button class="quiz-option" data-value="none">
+                        <div class="font-bold">Neither</div>
+                        <div class="text-sm text-gray-500">Focus on smart appliance usage</div>
+                    </button>
+                </div>
             </div>
 
             <div id="quiz-step-3" class="quiz-step">
                 <h2 class="text-2xl font-bold mb-2">Step 3: Summer Usage</h2>
                 <p class="text-gray-600 mb-6">How do you manage heat in your home?</p>
-                <button class="quiz-option" data-value="heavy">
-                    <div class="font-bold">Heavy AC Usage</div>
-                    <div class="text-sm text-gray-500">Multiple units running daily</div>
-                </button>
-                <button class="quiz-option" data-value="moderate">
-                    <div class="font-bold">Moderate / Evening AC</div>
-                    <div class="text-sm text-gray-500">Using it mainly during peak times</div>
-                </button>
-                <button class="quiz-option" data-value="low">
-                    <div class="font-bold">Fans / Passive Cooling</div>
-                    <div class="text-sm text-gray-500">Rare AC usage</div>
-                </button>
+                <div class="space-y-3">
+                    <button class="quiz-option" data-value="heavy">
+                        <div class="font-bold">Heavy AC Usage</div>
+                        <div class="text-sm text-gray-500">Multiple units running daily</div>
+                    </button>
+                    <button class="quiz-option" data-value="moderate">
+                        <div class="font-bold">Moderate / Evening AC</div>
+                        <div class="text-sm text-gray-500">Using it mainly during peak times</div>
+                    </button>
+                    <button class="quiz-option" data-value="low">
+                        <div class="font-bold">Fans / Passive Cooling</div>
+                        <div class="text-sm text-gray-500">Rare AC usage</div>
+                    </button>
+                </div>
             </div>
 
             <div id="quiz-result" class="quiz-step">
                 <div class="text-center">
-                    <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                     </div>
                     <h2 class="text-3xl font-bold mb-4">You are "Wholesale Ready"</h2>
                     <p class="text-gray-600 mb-8 leading-relaxed">
-                        Based on your setup, you could have earned an estimated <span class="font-bold text-green-600">$42—$115</span> during last week's price spikes by automating your export.
+                        Based on your setup in <span id="res-postcode" class="font-bold"></span>, you could have earned an estimated <span class="font-bold text-green-600">$42—$115</span> during last week's price spikes by automating your export.
                     </p>
                     <div class="bg-gray-50 p-6 rounded-xl border mb-8 text-left">
                         <h3 class="font-bold mb-2">Top Recommendation:</h3>
                         <p class="text-sm text-gray-600">The <strong>Amber for Batteries</strong> plan or a high-FiT specialist plan would likely outperform your current flat-rate bill.</p>
                     </div>
-                    <button class="finder-blue text-white w-full py-4 rounded-xl font-bold text-lg mb-4">View Plan Comparison</button>
-                    <button id="restart-quiz" class="text-gray-500 font-medium">Start over</button>
+                    <button class="finder-blue text-white w-full py-4 rounded-xl font-bold text-lg mb-4 hover:bg-blue-700 transition-colors shadow-lg">View Plan Comparison</button>
+                    <button id="restart-quiz" class="text-gray-500 font-medium hover:text-gray-700">Start over</button>
                 </div>
             </div>
         </div>
@@ -288,18 +344,28 @@
         const closeQuizBtn = document.getElementById('close-quiz');
         const restartQuizBtn = document.getElementById('restart-quiz');
         const quizSteps = document.querySelectorAll('.quiz-step');
-        const nextStepBtns = document.querySelectorAll('.next-step');
         const quizOptions = document.querySelectorAll('.quiz-option');
+        const quizProgress = document.getElementById('quiz-progress');
+        const postcodeInp = document.getElementById('quiz-postcode');
+        const postcodeNext = document.getElementById('postcode-next');
+        const postcodeErr = document.getElementById('postcode-error');
+        const resPostcode = document.getElementById('res-postcode');
 
         menuToggle.addEventListener('click', () => {
             const isActive = mobileMenu.classList.toggle('active');
             menuToggle.setAttribute('aria-expanded', isActive);
         });
 
+        const updateProgress = (stepIndex) => {
+            const progress = (stepIndex / (quizSteps.length - 1)) * 100;
+            quizProgress.style.width = `${progress}%`;
+        };
+
         const showStep = (stepIndex) => {
             quizSteps.forEach((step, index) => {
                 step.classList.toggle('active', index === stepIndex);
             });
+            updateProgress(stepIndex);
         };
 
         startQuizBtn.addEventListener('click', () => {
@@ -308,16 +374,29 @@
             showStep(0);
         });
 
-        closeQuizBtn.addEventListener('click', () => {
+        const closeQuiz = () => {
             quizOverlay.classList.remove('active');
             document.body.style.overflow = 'auto';
+        };
+
+        closeQuizBtn.addEventListener('click', closeQuiz);
+
+        // Close on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && quizOverlay.classList.contains('active')) {
+                closeQuiz();
+            }
         });
 
-        nextStepBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const currentStep = Array.from(quizSteps).findIndex(s => s.classList.contains('active'));
-                showStep(currentStep + 1);
-            });
+        postcodeNext.addEventListener('click', () => {
+            const val = postcodeInp.value.trim();
+            if (/^\d{4}$/.test(val)) {
+                postcodeErr.classList.add('hidden');
+                resPostcode.textContent = val;
+                showStep(1);
+            } else {
+                postcodeErr.classList.remove('hidden');
+            }
         });
 
         quizOptions.forEach(option => {
@@ -329,6 +408,7 @@
 
         restartQuizBtn.addEventListener('click', () => {
             showStep(0);
+            postcodeInp.value = '';
         });
     </script>
 </body>
